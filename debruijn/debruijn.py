@@ -68,12 +68,84 @@ def get_arguments():
 #==============================================================
 # Main program
 #==============================================================
+
+def read_fastq(fastq):
+    """Lit le fichier <fasta>.fasta passé en paramètre.
+
+    Parametres
+    ---------
+
+    ------
+    reference: str
+        la séquence de référence
+    """
+    with open(fastq, "r") as filin:
+        for line in filin:
+            yield next(filin)[:-1]
+            next(filin)
+            next(filin)
+    
+
+
+def cut_kmer(sequence, kmer_size):
+    """ fonction lisant une séquence est la découpant en une liste de k-mer
+
+    Paramètres :
+    ------------
+    Une séquence
+        issu d'un fichier fastq par la fonction read_fastq
+    kmer_size
+        la taille des kmers à générés
+    ------------
+    """
+    kmer = ""
+    kmerList = []
+    seq_len = len(sequence)
+    for i in range(seq_len-kmer_size+1):
+        yield(sequence[i:i+kmer_size])
+
+def build_kmer_dict(fastq, kmer_size):
+    kmer_dict = {}
+    for i in read_fastq(fastq):
+        for j in cut_kmer(i, kmer_size):
+            if j not in kmer_dict:
+                kmer_dict[j] = 1
+            else:
+                kmer_dict[j] += 1
+    return(kmer_dict)
+            
+def build_graph(kmer_dict):
+    pref = []
+    suff = []
+    weight = []
+    g = nx.DiGraph()
+    for key in kmer_dict:
+        pref.append(key[0:-1])
+        suff.append(key[1:])
+        weight.append(kmer_dict[key])
+    nodes = list(zip(zip(pref, suff), weight))
+    g = nx.DiGraph(nodes)
+    return g
+    
+
+    
+
+
+
 def main():
     """
     Main program function
     """
     # Get arguments
     args = get_arguments()
+    kmer_size = args.kmer_size
+    #fastq = read_fastq(args.fastq_file)
+    kmer_dict = build_kmer_dict(args.fastq_file, kmer_size)
+    graph = build_graph(kmer_dict)
+    
+
+    #cut_kmer(fastq[0], kmer_size)
+
 
 if __name__ == '__main__':
     main()
