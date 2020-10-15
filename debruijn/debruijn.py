@@ -16,22 +16,22 @@
 import argparse
 import os
 import sys
-import networkx as nx
+import random
+from random import randint
+from operator import itemgetter
+import statistics
 import matplotlib
 import matplotlib.pyplot as plt
-from operator import itemgetter
-import random
+import networkx as nx
 random.seed(9001)
-from random import randint
-import statistics
 
-__author__ = "Your Name"
+__author__ = "Ferdinand Petit"
 __copyright__ = "Universite Paris Diderot"
-__credits__ = ["Your Name"]
+__credits__ = ["Ferdinand Petit"]
 __license__ = "GPL"
 __version__ = "1.0.0"
-__maintainer__ = "Your Name"
-__email__ = "your@email.fr"
+__maintainer__ = "Ferdinand Petit"
+__email__ = "ferdinandpetit92@gmail.com"
 __status__ = "Developpement"
 
 def isfile(path):
@@ -126,12 +126,47 @@ def build_graph(kmer_dict):
     
 def get_starting_nodes(graph):
     x = list(graph.nodes())
+    start_nodes = []
     for i in range(len(x)):
-        print(x[i])
-        print(list(graph.successors(x[i])))
-        #print(graph.predecessors(x[i]))
-    return
+        if list(graph.predecessors(x[i])) == []:
+            start_nodes.append(x[i])
+    return start_nodes
 
+def get_ending_nodes(graph):
+    end_nodes = []
+    x = list(graph.nodes())
+    for i in range(len(x)):
+        if list(graph.successors(x[i])) == []:
+            end_nodes.append(x[i])
+    return end_nodes
+
+def get_contigs(graph, start, end):
+    contigs = []
+    for s in start: 
+        for e in end:
+            if(list(nx.all_simple_paths(graph, s, e))) != []:
+                x = list(nx.all_simple_paths(graph, s, e))
+                for idx in x:
+                    cont = ""
+                    for i, seq in enumerate(idx):
+                        if i == 1:
+                            cont = seq
+                        else:
+                            cont = cont + seq[-1]
+                    tup = [cont, len(cont)]
+                    contigs.append(tup)
+    return contigs
+
+def fill(text, width=80):
+    """Split text with a line return to respect fasta format"""
+    return os.linesep.join(text[i:i+width] for i in range(0, len(text), width))
+
+
+def save_contigs(contigs, file):
+    with open(file, "w") as filout:
+        for i, cont in enumerate(contigs):
+            filout.write(">contig_{} len={}\n".format(i, cont[1]))
+            filout.write(fill(cont[0]+"\n"))
 
 
 
@@ -155,7 +190,12 @@ def main():
     #for i in list(graph.nodes()):
     #    print(graph.predecessors(i))
 
-    get_starting_nodes(graph)
+    start = get_starting_nodes(graph)
+    end = get_ending_nodes(graph)
+    contigs = get_contigs(graph, start, end)
+    save_contigs(contigs, "bravoloto.txt")
+
+
 
 
 if __name__ == '__main__':
