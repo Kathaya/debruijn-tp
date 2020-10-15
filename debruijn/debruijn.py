@@ -18,6 +18,7 @@ import os
 import sys
 import networkx as nx
 import matplotlib
+import matplotlib.pyplot as plt
 from operator import itemgetter
 import random
 random.seed(9001)
@@ -119,16 +120,18 @@ def build_graph(kmer_dict):
     suff = []
     weight = []
     g = nx.DiGraph()
-    for key in kmer_dict:
-        pref.append(key[0:-1])
-        suff.append(key[1:])
-        weight.append(kmer_dict[key])
-    nodes = list(zip(zip(pref, suff), weight))
-    g = nx.DiGraph(nodes)
+    for kmer, poids in kmer_dict.items():
+        g.add_edge(kmer[:-1], kmer[1:], weight=poids)
     return g
     
+def get_starting_nodes(graph):
+    x = list(graph.nodes())
+    for i in range(len(x)):
+        print(x[i])
+        print(list(graph.successors(x[i])))
+        #print(graph.predecessors(x[i]))
+    return
 
-    
 
 
 
@@ -143,8 +146,16 @@ def main():
     kmer_dict = build_kmer_dict(args.fastq_file, kmer_size)
     graph = build_graph(kmer_dict)
     
+    #plt.subplot(121)
+    #nx.draw(graph, with_labels=True, font_weight='bold')
+    #nx.draw(graph)
+    #plt.show()
+    
+    #print(list(graph.nodes()))
+    #for i in list(graph.nodes()):
+    #    print(graph.predecessors(i))
 
-    #cut_kmer(fastq[0], kmer_size)
+    get_starting_nodes(graph)
 
 
 if __name__ == '__main__':
