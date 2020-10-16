@@ -284,8 +284,6 @@ def solve_out_tips():
     pass
 
 
-def get_sink_nodes():
-    pass
 
 
 def main():
