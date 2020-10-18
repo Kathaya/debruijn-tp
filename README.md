@@ -1,3 +1,7 @@
+# Problème de merge, voir branch master pour tous les commits
+La fusion a partir du clone semble avoir creer une brach main et une master avec deux histoire différentes m'empéchant deles fussionner, j'ai exclusivement travailler sur al brach master. Je n'ai pas trouvé d'autres solutons que d'ploader manuellement sur la branch main les fichiers, il n'y a donc qu'un seul push. 
+Désolé du dérangement
+
 # Assembleur basé sur les graphes de Debruijn
 
 Vous trouverez la description complète du TP [ici]( 
