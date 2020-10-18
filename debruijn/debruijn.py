@@ -20,8 +20,8 @@ import random
 from random import randint
 #from operator import itemgetter
 import statistics
-#import matplotlib
-#import matplotlib.pyplot as plt
+import matplotlib
+import matplotlib.pyplot as plt
 import networkx as nx
 random.seed(9001)
 
@@ -105,6 +105,15 @@ def cut_kmer(sequence, kmer_size):
 def build_kmer_dict(fastq, kmer_size):
     """
     Fonction permetant de constuireun dictionnaire des kmer
+
+    Parametres :
+    ------------
+    fastq : un fichier fastq
+    kmer_size : int désignant la taille des kmers a generer
+
+    Returns :
+    ------------
+    kmer_dict : dictionnaire des kmers des séquences présente dans le fichier fastq
     """
     kmer_dict = {}
     for i in read_fastq(fastq):
@@ -119,6 +128,14 @@ def build_kmer_dict(fastq, kmer_size):
 def build_graph(kmer_dict):
     """
     Construction d'un graphe orienté et pondéré à partir du dictionnaire de kmers
+
+    Parametres :
+    ------------
+    kmer_dict : dixtionnaire des kmers
+
+    Returns :
+    ------------
+    gdi : network Digraph()
     """
     gdi = nx.DiGraph()
     for kmer, poids in kmer_dict.items():
@@ -129,6 +146,14 @@ def build_graph(kmer_dict):
 def get_starting_nodes(graph):
     """
     Fonction renvoyant l'ensemble des noeuds d'entrée en liste
+
+    Parametres :
+    ------------
+    graph : network Digraph()
+    
+    Returns :
+    ------------
+    start_nodes : Liste des noeuds d'entrée
     """
     start_nodes = []
     for node in graph.nodes:
@@ -140,6 +165,14 @@ def get_starting_nodes(graph):
 def get_sink_nodes(graph):
     """
     Fonction renvoyant l'ensemble des noeuds de sortie en liste
+    
+    Parametres :
+    ------------
+    graph : network Digraph()
+    
+    Returns :
+    ------------
+    end_nodes : Liste des noeuds de sortie
     """
     end_nodes = []
     for node in graph.nodes:
@@ -150,6 +183,16 @@ def get_sink_nodes(graph):
 def get_contigs(graph, start, end):
     """
     Création des contigs à partir des noeuds d'entrée et de sortie non optimisé
+    
+    Parametres :
+    ------------
+    graph : network Digraph()
+    start_nodes : Liste des noeuds d'entrée
+    end_nodes : Liste des noeuds de sortie
+    
+    Returns :
+    ------------
+    contigs : Liste des contigs présent dans le graph
     """
     contigs = []
     for debut in start:
@@ -174,6 +217,11 @@ def fill(text, width=80):
 def save_contigs(contigs, file):
     """
     Fonction sauvegardant dans un fichier les contigs calculés
+    
+    Parametres :
+    ------------
+    contigs : Lsise des contigs
+    file : Fichier de sorie
     """
     with open(file, "w") as filout:
         for i, cont in enumerate(contigs):
@@ -184,13 +232,32 @@ def save_contigs(contigs, file):
 def std(vec_val):
     """
     Fonction calculant l'écart-type d'un vecteur
+    
+    Parametres :
+    ------------
+    vec_val : Vecteur de valeur 
+    
+    Returns :
+    ------------
+    sd : Standard deviation du vecdeur de valeur
     """
+    if len(vec_val) < 2:
+        return(0)
     return statistics.stdev(vec_val)
 
 
 def path_average_weight(graph, path):
     """
     Calcul du poids moyen d'un chemin
+    
+    Parametres :
+    ------------
+    graph : network Digraph()
+    path : Liste de liste de chemin (chaine de caractères)
+    
+    Returns :
+    ------------
+    contigs : Liste des contigs présent dans le graph
     """
     weigth = []
     for i in range(len(path)-1):
@@ -201,7 +268,19 @@ def path_average_weight(graph, path):
 def remove_paths(graph, path_list, delete_entry_node, delete_sink_node):
     """
     Supprimes tout les chemins indésirables donnés
+        
+    Parametres :
+    ------------
+    graph : network Digraph()
+    path_list : Liste de liste de chemins (chiane de caractères)
+    delete_entry_node : Booléen
+    delete_sink_node : Booléen
+    
+    Returns :
+    ------------
+    graph :network Digraph()
     """
+
     for path in path_list:
         graph.remove_nodes_from(path[1:-1])
         if delete_entry_node:
@@ -218,39 +297,52 @@ def select_best_path(graph, path_list, long_path_list, pm_path_list,
     Sinon deux chemins ont le même poids alors celui le plus long
     Sinon égalité alors en choisi un aléatoire.
     Puis supprime tout les path inutiles
+            
+    Parametres :
+    ------------
+    graph : network Digraph()
+    path_list : Liste de liste de chemins (chiane de caractères)
+    long_path_list : Vecteur de valeur (int)
+    pm_path_lsit : Vecteur de valeur (int)
+    delete_entry_node : Booléen
+    delete_sink_node : Booléen
+    
+    Returns :
+    ------------
+    graph :network Digraph()
     """
+
     ind_path_list = []
     # Sélection des chemin avec le meilleur poidssi variabilité
     if std(pm_path_list) != 0:
         indices = [i for i, x in enumerate(
             pm_path_list) if x == max(pm_path_list)]
         cp_path_list = list(path_list)
-        pop_count = 0
         for i, path in enumerate(cp_path_list):
             if i not in indices:
                 ind_path_list.append(path)
-                path_list.pop(i-pop_count)
-                long_path_list.pop(i-pop_count)
-                pm_path_list.pop(i-pop_count)
-                pop_count += 1
         if len(indices) == 1:
             return remove_paths(graph, ind_path_list, delete_entry_node, delete_sink_node)
+
+        path_list = [path_list[i] for i in indices]
+        long_path_list = [long_path_list[i] for i in indices]
+        pm_path_list = [pm_path_list[i] for i in indices]
+
 
     # Sélection des chemins avec la meilleur longeur
     if std(long_path_list) != 0:
         indices = [i for i, x in enumerate(
             long_path_list) if x == max(long_path_list)]
         cp_path_list = list(path_list)
-        pop_count = 0
         for i, path in enumerate(cp_path_list):
             if i not in indices:
                 ind_path_list.append(path)
-                path_list.pop(i-pop_count)
-                long_path_list.pop(i-pop_count)
-                pm_path_list.pop(i-pop_count)
-                pop_count += 1
         if len(indices) == 1:
             return remove_paths(graph, ind_path_list, delete_entry_node, delete_sink_node)
+
+        path_list = [path_list[i] for i in indices]
+        long_path_list = [long_path_list[i] for i in indices]
+        pm_path_list = [pm_path_list[i] for i in indices]
 
     # Sélection aléatoire du meilleur chemin
     indice = randint(0, len(path_list))
@@ -262,6 +354,21 @@ def select_best_path(graph, path_list, long_path_list, pm_path_list,
 
 
 def solve_bubble(graph, ancestor_node, descendant_node, ):
+    """
+    Fonction permettant de retirer une bulle eg deux chemin partant d'un même noeud et allant à un meme autre noeud.
+    Garde le chemin optimal.
+            
+    Parametres :
+    ------------
+    graph : network Digraph()
+    ancestor_node : Liste des noeuds ancètres (chaine de caractère)
+    descendant_node : Liste des noeuds descendant (chaine de caractère)
+    
+    Returns :
+    ------------
+    graph :network Digraph()
+    """
+
     path_list = []
     long_path_list = []
     pm_path_list = []
@@ -273,15 +380,119 @@ def solve_bubble(graph, ancestor_node, descendant_node, ):
 
 
 def simplify_bubbles(graph):
-    pass
+    """Prend un graphe et retourne un graphe sans bulle
+    Nous ne prennons on compte que les cas avec 2 noeuds ancestre, 
+    car s'il y en a plus, menant au même MRCA, on choisira tout de même le chemin le plus cour.
+             
+    Parametres :
+    ------------
+    graph : network Digraph()
+
+    Returns :
+    ------------
+    graph :network Digraph()
+    """
+
+    #Creation de chaque couple noeud-MRCA des ancetres.
+    couple_bubble = []
+    for node in graph:
+        pred_node = list(graph.predecessors(node))
+        if len(pred_node) < 2:
+            continue
+        mrca = nx.lowest_common_ancestor(graph, pred_node[0], pred_node[1])
+        couple_bubble.append([mrca, node])
+
+    #Résolution des bulles des couples.
+    for couple_nodes in couple_bubble:
+        graph = solve_bubble(graph, couple_nodes[0], couple_nodes[1])
+
+    return graph
 
 
-def solve_entry_tips():
-    pass
 
 
-def solve_out_tips():
-    pass
+
+
+def solve_entry_tips(graph, entry_nodes):
+    """
+    Retire tout les braches d'entrée non optimal
+
+    Arguments
+    ---------
+    graph: NetworkX graph
+    entry_nodes: List des noeuds d'entrée
+
+    Returns
+    -------
+    graph: NetworkX graph
+    """
+    path_list = []
+    long_path_list = []
+    pm_path_list = []
+
+    for node in entry_nodes:
+        #Prends le premier succ car si tips, le noeud n'a qu'un successeur.
+        succ_node = [x for x in graph.successors(node)][0]
+        pred_nodes = [x for x in graph.predecessors(succ_node)]
+
+        # Recherche du premier noeud successeur avec plus de 1 prédécesseur,
+        # Donc le premier noeud de fin du tip 
+
+        while len(pred_nodes) == 1 and len(list(graph.successors(succ_node))) >= 1:
+            succ_node = [x for x in graph.successors(succ_node)][0]
+            pred_nodes = [x for x in graph.predecessors(succ_node)]
+
+        # Puis calcul  du chemin du tips vers l'arbre, stocker dans une liste
+        if len(pred_nodes) > 1:
+            for path in nx.all_simple_paths(graph, node, succ_node):
+                path_list.append(path)
+                long_path_list.append(len(path))
+                pm_path_list.append(path_average_weight(graph, path))
+
+    # Calcul du chemn le plus cour de chaque branche et conservation de la meilleure
+    return select_best_path(graph, path_list, long_path_list, pm_path_list,
+                             delete_entry_node=True, delete_sink_node=False)
+
+
+def solve_out_tips(graph, out_nodes):
+    """
+    Retire tout les braches de sortie non optimal
+
+    Arguments
+    ---------
+    graph: NetworkX graph
+    out_nodes: List des noeuds de sortie
+
+    Returns
+    -------
+    graph: NetworkX graph
+    """
+    path_list = []
+    long_path_list = []
+    pm_path_list = []
+
+    for node in out_nodes:
+        #Prends le premier predecesseur car si tips, le noeud n'a qu'un successeur.
+        pred_node = [x for x in graph.predecessors(node)][0]
+        succ_nodes = [x for x in graph.successors(pred_node)]
+
+        # Recherche du premier noeud prédécesseur avec plus de 1 successeur,
+        # Donc le premier noeud de debut du tip 
+        while len(succ_nodes) == 1 and len(list(graph.predecessors(pred_node))) > 0:
+            pred_node = [x for x in graph.predecessors(pred_node)][0]
+            succ_nodes = [x for x in graph.successors(pred_node)]
+
+        # Puis calcul  du chemin du tips vers l'arbre, stocker dans une liste
+        if len(succ_nodes) > 1:
+            for path in nx.all_simple_paths(graph, pred_node, node):
+                path_list.append(path)
+                long_path_list.append(len(path))
+                pm_path_list.append(path_average_weight(graph, path))
+
+    # Calcul du chemn le plus cour de chaque branche et conservation de la meilleure
+    return select_best_path(graph, path_list, long_path_list, pm_path_list,
+                             delete_entry_node=False, delete_sink_node=True)
+
 
 
 
@@ -293,19 +504,31 @@ def main():
     # Get arguments
     args = get_arguments()
     kmer_size = args.kmer_size
+
+    # Construction du dictionnaire des kmers
     kmer_dict = build_kmer_dict(args.fastq_file, kmer_size)
+
+    #Construction du graphe
     graph = build_graph(kmer_dict)
-    # plt.subplot(121)
-    #nx.draw(graph, with_labels=True, font_weight='bold')
-    # nx.draw(graph)
-    # plt.show()
+
+    # Etapes de simplification:
+    graph = simplify_bubbles(graph)
+
     # print(list(graph.nodes()))
     # for i in list(graph.nodes()):
     # print(graph.predecessors(i))
     start = get_starting_nodes(graph)
     end = get_sink_nodes(graph)
+
+    graph = solve_entry_tips(graph, start)
+    graph = solve_out_tips(graph, end)
+
+    # Maintenant qu'on un point d'etré et de sortie dans le graphe
+    # il faut les idéntifiés
+    start = get_starting_nodes(graph)
+    end = get_sink_nodes(graph)
     contigs = get_contigs(graph, start, end)
-    save_contigs(contigs, "bravoloto.txt")
+    save_contigs(contigs, args.output_file)
 
 
 if __name__ == '__main__':
